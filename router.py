@@ -36,7 +36,7 @@ class Router(asyncore.dispatcher):
         self.close()
         for channel in asyncore.socket_map.values():
             channel.handle_close()
-        self.log('Server closed.')
+        self.log('Router stopped.')
 
     def handle_accept(self):
         conn, addr = self.accept()
@@ -45,7 +45,8 @@ class Router(asyncore.dispatcher):
         Channel(self.lsdb, self.log, conn)
 
     def start(self):
-        self.log(repr(self))
+        status = ['Router'] + repr(self).split()[1:3]
+        self.log(' '.join(status))
         # Establish adjacency
         self.hello()
         asyncore.loop()
