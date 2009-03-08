@@ -3,12 +3,16 @@
 import socket
 import asyncore
 import asynchat
+from threading import Timer
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
 import ospf
+
+
+hello_interval = 5 # 5 seconds
 
 
 class Router(asyncore.dispatcher):
@@ -23,6 +27,7 @@ class Router(asyncore.dispatcher):
         self.table = RoutingTable()
         self.lsdb = ospf.Database()
         self.neighbors = {}
+        self.timers = []
 
     def writable(self):
         return False
@@ -46,6 +51,8 @@ class Router(asyncore.dispatcher):
         asyncore.loop()
 
     def stop(self):
+        for t in self.timers:
+            t.cancel()
         self.handle_close()
 
     def add_neighbor(self, host, port, bandwidth):
@@ -54,17 +61,24 @@ class Router(asyncore.dispatcher):
 
     def hello(self):
         """Simple neighbor reachability check"""
+        print "hello()"
+        t = Timer(hello_interval, self.hello)
+        self.timers.append(t)
+        t.start()
         for idx, neighbor in self.neighbors.iteritems():
             host, port, bandwidth = neighbor
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
                 s.connect((host, port))
             except socket.error:
+                print "neighbor down"
                 # remove entry from lsdb
                 pass
             else:
                 # update lsdb
                 pass
+            finally:
+                s.close()
 
     def advertise(self):
         # for each neighbor in self.lsdb
