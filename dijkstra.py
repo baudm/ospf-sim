@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# From: http://en.wikipedia.org/wiki/Dijkstra's_algorithm
 
 import heapq
 from collections import defaultdict
