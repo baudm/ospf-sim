@@ -100,7 +100,7 @@ class Interface(asyncore.dispatcher):
         conn, addr = self.accept()
         #self.log('Connection accepted: %s' % (addr, ))
         # Dispatch connection to a Channel
-        Channel(self.lsdb, self.log, conn)
+        Channel(self.lsdb, self.log, self.connections, conn)
 
 
 
@@ -109,12 +109,14 @@ class Channel(asynchat.async_chat):
     ac_in_buffer_size = 512
     ac_out_buffer_size = 512
 
-    def __init__(self, lsdb, log, conn):
+    def __init__(self, lsdb, log, connections, conn):
         asynchat.async_chat.__init__(self, conn)
+        self.add_channel(connections)
         self.set_terminator('\r\n')
-        self.buffer = []
         self.lsdb = lsdb
         self.log = log
+        self.connections = connections
+        self.buffer = []
 
     def collect_incoming_data(self, data):
         self.buffer.append(data)
@@ -126,6 +128,7 @@ class Channel(asynchat.async_chat):
         self.lsdb.update(entry)
 
     def handle_close(self):
+        del self.connections[self._fileno]
         self.close()
         #self.log('Connection closed: %s' % (self.addr, ))
 
