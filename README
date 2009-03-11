@@ -1,0 +1,28 @@
+ECE 151: Intra-domain routing simulation (OSPF v2 routing protocol) using Python
+
+Assumptions/Conditions/Limitations:
+
+Area type
+* backbone area (area 0.0.0.0/area 0)
+* All routers are in Area 0. Thus, all routes are intra-area routes.
+
+
+Network type
+* point-to-point - All routers are connected via point-to-point (serial) links
+
+
+DR and BDR election
+* DR and BDR need not be elected since the network type is point-to-point
+
+
+Path cost
+* use Cisco's "standard" metric which is solely based on a link's bandwidth
+* cost = 10^8 bps / bandwidth (in bps)
+
+
+Router types
+* Since the routers are all in Area 0, all routers are backbone routers
+
+
+Network Topology
+* Physical connections (serial links) between routers are specified in the configuration files.
