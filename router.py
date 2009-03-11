@@ -15,69 +15,49 @@ import ospf
 hello_interval = 5 # 5 seconds
 
 
-class Router(asyncore.dispatcher):
+class Router(object):
 
-    def __init__(self, router_id, port):
-        asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.set_reuse_addr()
-        self.bind(('', port))
-        self.listen(1)
-        self.router_id = router_id
+    def __init__(self):
         self.table = RoutingTable()
         self.lsdb = ospf.Database()
-        self.neighbors = {}
-        self.timers = []
+        self.timers = {}
+        self.interfaces = {}
 
-    def writable(self):
-        return False
+    def iface_create(self, name, bandwidth, port):
+        self.interfaces[name] = Interface(name, bandwidth, port, self.lsdb)
 
-    def handle_close(self):
-        self.close()
-        for channel in asyncore.socket_map.values():
-            channel.handle_close()
-        self.log('Router stopped.')
-
-    def handle_accept(self):
-        conn, addr = self.accept()
-        self.log('Connection accepted: %s' % (addr, ))
-        # Dispatch connection to a Channel
-        Channel(self.lsdb, self.log, conn)
+    def iface_config(self, name, address, netmask, host, port):
+        iface = self.interfaces[name]
+        iface.address = address
+        iface.netmask = netmask
+        iface.remote_node = (host, port)
 
     def start(self):
-        status = ['Router'] + repr(self).split()[1:3]
-        self.log(' '.join(status))
         # Establish adjacency
         self.hello()
         asyncore.loop()
 
     def stop(self):
-        for t in self.timers:
+        for t in self.timers.values():
             t.cancel()
-        self.handle_close()
-
-    def add_neighbor(self, host, port, bandwidth):
-        neighbor = (host, port, bandwidth)
-        self.neighbors[id(neighbor)] = neighbor
+        for iface in self.interfaces.values():
+            iface.handle_close()
 
     def hello(self):
         """Simple neighbor reachability check"""
-        print "hello()"
         t = Timer(hello_interval, self.hello)
-        self.timers.append(t)
+        self.timers['hello'] = t
         t.start()
-        for idx, neighbor in self.neighbors.iteritems():
-            host, port, bandwidth = neighbor
+        for iface in self.interfaces.values():
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
-                s.connect((host, port))
+                s.connect(iface.remote_node)
             except socket.error:
-                print "neighbor down"
+                print '%s neighbor down' % (iface.name, )
                 # remove entry from lsdb
-                pass
             else:
                 # update lsdb
-                pass
+                print '%s neighbor up' % (iface.name, )
             finally:
                 s.close()
 
@@ -85,6 +65,42 @@ class Router(asyncore.dispatcher):
         # for each neighbor in self.lsdb
         # send ospf.Packet()
         pass
+
+
+class Interface(asyncore.dispatcher):
+    """Physical Router interface"""
+
+    def __init__(self, name, bandwidth, port, lsdb):
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.set_reuse_addr()
+        self.bind(('', port))
+        self.listen(1)
+        self.name = name
+        self.bandwidth = bandwidth
+        self.lsdb = lsdb
+        self.address = None
+        self.netmask = None
+        self.remote_node = None
+        self.connections = {}
+        self.log('%s up.' % (self.name, ))
+
+    @staticmethod
+    def writable():
+        return False
+
+    def handle_close(self):
+        self.close()
+        for conn in self.connections.values():
+            conn.handle_close()
+        self.log('%s down.' % (self.name, ))
+
+    def handle_accept(self):
+        conn, addr = self.accept()
+        #self.log('Connection accepted: %s' % (addr, ))
+        # Dispatch connection to a Channel
+        Channel(self.lsdb, self.log, conn)
+
 
 
 class Channel(asynchat.async_chat):
@@ -110,7 +126,7 @@ class Channel(asynchat.async_chat):
 
     def handle_close(self):
         self.close()
-        self.log('Connection closed: %s' % (self.addr, ))
+        #self.log('Connection closed: %s' % (self.addr, ))
 
 
 class Route(object):

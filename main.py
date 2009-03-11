@@ -12,16 +12,23 @@ def main():
     if len(sys.argv) < 2:
         print 'Specify configuration file'
         return
-    config = SafeConfigParser()
-    config.read(sys.argv[1])
-    router_id = config.get('Router', 'id')
-    port = int(config.get('Router', 'port'))
-    router = Router(router_id, port)
-    for neighbor in config.sections()[1:]:
-        host = config.get(neighbor, 'host')
-        port = int(config.get(neighbor, 'port'))
-        bandwidth = int(config.get(neighbor, 'bandwidth'))
-        router.add_neighbor(host, port, bandwidth)
+    router = Router()
+    cfg = SafeConfigParser()
+    cfg.read(sys.argv[1])
+    # Create and configure Router interfaces
+    for iface in [i for i in cfg.sections() if i.startswith('Local:')]:
+        # Create
+        name = iface.split(':')[1]
+        bandwidth = cfg.get(iface, 'bandwidth')
+        port = int(cfg.get(iface, 'port'))
+        router.iface_create(name, bandwidth, port)
+        # Configure
+        address = cfg.get(iface, 'address')
+        netmask = cfg.get(iface, 'netmask')
+        link = cfg.get(iface, 'link')
+        host = cfg.get(link, 'host')
+        port = int(cfg.get(link, 'port'))
+        router.iface_config(name, address, netmask, host, port)
     signal.signal(signal.SIGTERM, lambda s, f: router.stop())
     signal.signal(signal.SIGINT, lambda s, f: router.stop())
     router.start()
