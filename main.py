@@ -12,9 +12,9 @@ def main():
     if len(sys.argv) < 2:
         print 'Specify configuration file'
         return
-    router = Router()
     cfg = SafeConfigParser()
     cfg.read(sys.argv[1])
+    router = Router(cfg.get('Local', 'name'))
     # Create and configure Router interfaces
     for iface in [i for i in cfg.sections() if i.startswith('Local:')]:
         # Create

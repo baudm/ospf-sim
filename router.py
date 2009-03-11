@@ -17,7 +17,8 @@ hello_interval = 5 # 5 seconds
 
 class Router(object):
 
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.table = RoutingTable()
         self.lsdb = ospf.Database()
         self.timers = {}
@@ -53,11 +54,11 @@ class Router(object):
             try:
                 s.connect(iface.remote_node)
             except socket.error:
-                print '%s neighbor down' % (iface.name, )
+                print '%s %s neighbor down' % (self.name, iface.name)
                 # remove entry from lsdb
             else:
                 # update lsdb
-                print '%s neighbor up' % (iface.name, )
+                print '%s %s neighbor up' % (self.name, iface.name)
             finally:
                 s.close()
 
