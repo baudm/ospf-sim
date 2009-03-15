@@ -26,3 +26,9 @@ Router types
 
 Network Topology
 * Physical connections (serial links) between routers are specified in the configuration files.
+
+
+Hello and Dead intervals
+* Hello interval is the same for all routers since it is hardcoded into the program itself.
+* Dead interval is practically 0 seconds since a router is assumed to be down as
+  soon as a neighboring router's Hello "packet" fails to connect.
