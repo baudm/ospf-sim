@@ -131,25 +131,24 @@ class Interface(asyncore.dispatcher):
         conn, addr = self.accept()
         #self.log('Connection accepted: %s' % (addr, ))
         # Dispatch connection to a IfaceRx
-        IfaceRx(self.lsdb, self.log, self.connections, conn)
+        IfaceRx(self.lsdb, self.connections, conn)
 
     def transmit(self, lsa):
-        tx = IfaceTx(self.log, self.connections)
-        tx.connect(self.remote_end)
+        tx = IfaceTx(self.remote_end, self.connections)
         data = pickle.dumps(lsa)
-        tx.push(''.join([data, '\r\n\r\n']))
+        tx.push(''.join([data, '\0E\0O\0F\0']))
 
 
 class IfaceTx(asynchat.async_chat):
 
-    #ac_in_buffer_size = 512
-    #ac_out_buffer_size = 512
+    ac_in_buffer_size = 0
+    ac_out_buffer_size = 2048
 
-    def __init__(self, log, connections):
+    def __init__(self, address, connections):
         asynchat.async_chat.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.add_channel(connections)
-        self.log = log
+        self.connect(address)
         self.connections = connections
 
     @staticmethod
@@ -163,15 +162,14 @@ class IfaceTx(asynchat.async_chat):
 
 class IfaceRx(asynchat.async_chat):
 
-    #ac_in_buffer_size = 512
-    #ac_out_buffer_size = 512
+    ac_in_buffer_size = 2048
+    ac_out_buffer_size = 2048
 
-    def __init__(self, lsdb, log, connections, conn):
+    def __init__(self, lsdb, connections, conn):
         asynchat.async_chat.__init__(self, conn)
         self.add_channel(connections)
-        self.set_terminator('\r\n\r\n')
+        self.set_terminator('\0E\0O\0F\0')
         self.lsdb = lsdb
-        self.log = log
         self.connections = connections
         self.buffer = []
 
