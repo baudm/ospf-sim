@@ -1,34 +1,32 @@
-ECE 151: Intra-domain routing simulation (OSPF v2 routing protocol) using Python
+ECE 151: OSPF on point-to-point networks simulation in Python
 
-Assumptions/Conditions/Limitations:
+Assumptions/Conventions/Clarifications/Limitations:
 
-Area type
-* backbone area (area 0.0.0.0/area 0)
+Area type: Backbone Area/Area 0.0.0.0/Area 0
 * All routers are in Area 0. Thus, all routes are intra-area routes.
 
 
-Network type
-* point-to-point - All routers are connected via point-to-point (serial) links
+Router type
+* Since the routers are all in Area 0, all routers are backbone routers
 
 
-DR and BDR election
-* DR and BDR need not be elected since the network type is point-to-point
+Router IDs
+* The Router ID (RID) used is simply the hostname of a router instead of the
+  IP address of a router's interface
+
+
+LSA Type
+* All transmitted and received LSAs are Router LSAs
+
+
+Network type: Point-to-Point
+* All routers are connected via point-to-point links
+* Physical connections between routers are specified in the configuration files.
+* DR and BDR for each segment need not be elected since the network type is point-to-point
+* Hello and Dead intervals are 10 seconds and 40 seconds, respectively
 
 
 Path cost
 * use Cisco's "standard" metric which is solely based on a link's bandwidth
 * cost = 10^8 bps / bandwidth (in bps)
-
-
-Router types
-* Since the routers are all in Area 0, all routers are backbone routers
-
-
-Network Topology
-* Physical connections (serial links) between routers are specified in the configuration files.
-
-
-Hello and Dead intervals
-* Hello interval is the same for all routers since it is hardcoded into the program itself.
-* Dead interval is practically 0 seconds since a router is assumed to be down as
-  soon as a neighboring router's Hello "packet" fails to connect.
+* specified bandwidth for each interface is for the uplink (outgoing direction)
