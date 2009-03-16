@@ -14,7 +14,7 @@ def main():
         return
     cfg = SafeConfigParser()
     cfg.read(sys.argv[1])
-    router = Router(cfg.get('Local', 'name'))
+    router = Router(cfg.get('Local', 'hostname'))
     # Create and configure Router interfaces
     for iface in [i for i in cfg.sections() if i.startswith('Local:')]:
         # Create
