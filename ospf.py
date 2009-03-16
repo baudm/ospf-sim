@@ -63,3 +63,32 @@ class Database(dict):
         for adv_router in self:
             self[adv_router].age += 1
         self.flush()
+
+    def get_shortest_paths(self, router_id):
+        g = dijkstra.Graph()
+        nodes = []
+        output = []
+        for lsa in self.values():
+            nodes.append(lsa.adv_router)
+            for neighbor_id, cost in lsa.neighbors.iteritems():
+                g.add_e(lsa.adv_router, neighbor_id, cost)
+        if router_id in nodes:
+            nodes.remove(router_id)
+        for dest in nodes:
+            # Find a shortest path from router_id to dest
+            dist, prev = g.s_path(router_id)
+            # Trace the path back using the prev array.
+            path = []
+            current = dest
+            while current in prev:
+                path.insert(0, prev[current])
+                current = prev[current]
+            try:
+                cost = dist[dest]
+            except KeyError:
+                continue
+            else:
+                next_hop = (path[1] if len(path) > 1 else dest)
+                entry = (dest, next_hop, cost)
+                output.append(entry)
+        return output

@@ -78,6 +78,12 @@ class Router(object):
         t = Timer(ospf.HELLO_INTERVAL, self.hello)
         t.start()
         self.timers['hello'] = t
+        # TODO: move this out of here
+        self.table = RoutingTable()
+        for path in self.lsdb.get_shortest_paths(self.hostname):
+            r = Route(*path)
+            self.table.append(r)
+        print self.table
 
     def remove_neighbor(self, neighbor_id):
         del self.timers[neighbor_id]
@@ -89,7 +95,8 @@ class Router(object):
         """Flood received packet to other interfaces"""
         print 'Flooding LSA received from %s' % (source_iface, )
         interfaces = self.interfaces.keys()
-        interfaces.remove(source_iface)
+        if source_iface is not None:
+            interfaces.remove(source_iface)
         for iface_name in interfaces:
             self.interfaces[iface_name].transmit(packet)
 
@@ -219,6 +226,15 @@ class IfaceRx(asynchat.async_chat):
                 if lsdb_neighbors != current_neighbors:
                     print 'network topology changed'
                     self.router.advertise()
+                    # Re-flood link state packets from currently re-upped neighbor
+                    #for n in current_neighbors:
+                    #    if n in lsdb_neighbors:
+                    #        lsdb_neighbors.remove(n)
+                    #map(lsdb_neighbors.remove, current_neighbors)
+                    #print lsdb_neighbors
+                    #for neighbor_id in lsdb_neighbors:
+                    #    packet = self.router.lsdb[neighbor_id]
+                    #self.router.flood(None, packet)
             else:
                 print 'network topology changed'
                 self.router.advertise()
