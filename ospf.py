@@ -77,7 +77,7 @@ class Database(dict):
         for lsa in self.values():
             nodes.append(lsa.adv_router)
             for neighbor_id, data in lsa.neighbors.iteritems():
-                cost = data[2]
+                cost = data[3]
                 g.add_e(lsa.adv_router, neighbor_id, cost)
         if router_id in nodes:
             nodes.remove(router_id)
@@ -95,7 +95,12 @@ class Database(dict):
             except KeyError:
                 continue
             else:
-                next_hop = (path[1] if len(path) > 1 else dest)
-                entry = (dest, next_hop, cost)
+                if len(path) > 1:
+                    next_hop = path[1]
+                    before_dest = path[len(path) - 1]
+                else:
+                    next_hop = dest
+                    before_dest = router_id
+                entry = (next_hop, before_dest, dest, cost)
                 paths.append(entry)
         return paths

@@ -69,7 +69,11 @@ class Router(object):
     def _update_routing_table(self):
         self._table = RoutingTable()
         for path in self._lsdb.get_shortest_paths(self._hostname):
-            r = Route(*path)
+            next_hop, before_dest, dest, cost = path
+            iface, gateway = self._lsdb[self._hostname].neighbors[next_hop][:2]
+            dest_addr, netmask = self._lsdb[before_dest].neighbors[dest][1:3]
+            dest_net = get_network_address(dest_addr, netmask)
+            r = Route(dest_net, gateway, netmask, cost, iface)
             self._table.append(r)
         print self._table
 
@@ -99,7 +103,7 @@ class Router(object):
             iface_name, address, netmask = data
             iface = self._interfaces[iface_name]
             cost = ospf.BANDWIDTH_BASE / float(iface.bandwidth)
-            neighbors[neighbor_id] = (iface_name, address, cost)
+            neighbors[neighbor_id] = (iface_name, address, netmask, cost)
         # Create new or update existing LSA
         if self._hostname in self._lsdb:
             lsa = self._lsdb[self._hostname]
@@ -267,16 +271,18 @@ class IfaceRx(asynchat.async_chat):
 
 class Route(object):
 
-    def __init__(self, dest, next, cost):
+    def __init__(self, dest, gateway, netmask, metric, iface):
         self.dest = dest
-        self.next_hop = next
-        self.cost = cost
+        self.gateway = gateway
+        self.netmask = netmask
+        self.metric = metric
+        self.iface = iface
 
 
 class RoutingTable(list):
 
     def __repr__(self):
-        routes = ['Dest\tNext Hop\tCost']
+        routes = ['Dest\tGateway\tNetmask\tMetric\tInterface']
         for r in self:
-            routes.append("%s\t%s\t%.2f" % (r.dest, r.next_hop, r.cost))
+            routes.append("%s\t%s\t%s\t%.2f\t%s" % (r.dest, r.gateway, r.netmask, r.metric, r.iface))
         return '\n'.join(routes)
