@@ -70,13 +70,12 @@ def main():
                     col_count += 1
                 row_count += 1
 
-
     timer = QtCore.QTimer()
     timer.start(1000)
 
     QtCore.QObject.connect(timer, QtCore.SIGNAL('timeout()'), update)
 
-    QtCore.QObject.connect(w, QtCore.SIGNAL('destroyed()'), router.stop)
+    QtCore.QObject.connect(app, QtCore.SIGNAL('lastWindowClosed()'), router.stop)
     w.show()
     t = Thread(target=router.start)
     t.setDaemon(True)
