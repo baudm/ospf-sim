@@ -216,12 +216,12 @@ class IfaceRx(asynchat.async_chat):
             t = Timer(ospf.DEAD_INTERVAL, self.router.remove_neighbor, args=(packet.router_id, ))
             t.start()
             self.router.timers[packet.router_id] = t
+            current_neighbors = self.router.neighbors.keys()
             self.router.neighbors[packet.router_id] = self.iface_name
             # Advertise LSA if there are changes
             if self.router.hostname in self.router.lsdb:
                 lsdb_neighbors = self.router.lsdb[self.router.hostname].neighbors.keys()
                 lsdb_neighbors.sort()
-                current_neighbors = self.router.neighbors.keys()
                 current_neighbors.sort()
                 if lsdb_neighbors != current_neighbors:
                     print 'network topology changed'
@@ -242,8 +242,8 @@ class IfaceRx(asynchat.async_chat):
             print 'Received LSA from %s' % (packet.adv_router)
             #print packet
             # Insert to Link State database
-            self.router.lsdb.insert(packet)
-            self.router.flood(self.iface_name, packet)
+            if self.router.lsdb.insert(packet):
+                self.router.flood(self.iface_name, packet)
         self.handle_close()
         print self.router.lsdb.values()
         print '\n'
