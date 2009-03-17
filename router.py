@@ -14,6 +14,14 @@ import ospf
 
 _terminator = '\0E\0O\0F\0'
 
+def get_network_address(addr, netmask):
+    addr = addr.split('.')
+    netmask = netmask.split('.')
+    netadd = []
+    for i in xrange(4):
+        netadd.append(str(int(addr[i]) & int(netmask[i])))
+    return '.'.join(netadd)
+
 
 class Router(object):
 
@@ -57,7 +65,8 @@ class Router(object):
         t = Timer(ospf.HELLO_INTERVAL, self._hello)
         t.start()
         self._timers['hello'] = t
-        # TODO: move this out of here
+
+    def _update_routing_table(self):
         self._table = RoutingTable()
         for path in self._lsdb.get_shortest_paths(self._hostname):
             r = Route(*path)
@@ -72,7 +81,9 @@ class Router(object):
 
     def _flood(self, packet, source_iface=None):
         """Flood received packet to other interfaces"""
-        interfaces = self._neighbors.values()
+        interfaces = []
+        for data in self._neighbors.values():
+            interfaces.append(data[0])
         if source_iface in interfaces:
             print 'Flooding LSA received from %s' % (source_iface, )
             interfaces.remove(source_iface)
@@ -84,10 +95,11 @@ class Router(object):
 
     def _advertise(self):
         neighbors = {}
-        for neighbor_id, iface_name in self._neighbors.iteritems():
+        for neighbor_id, data in self._neighbors.iteritems():
+            iface_name, address, netmask = data
             iface = self._interfaces[iface_name]
             cost = ospf.BANDWIDTH_BASE / float(iface.bandwidth)
-            neighbors[neighbor_id] = cost
+            neighbors[neighbor_id] = (iface_name, address, cost)
         # Create new or update existing LSA
         if self._hostname in self._lsdb:
             lsa = self._lsdb[self._hostname]
@@ -98,6 +110,8 @@ class Router(object):
         self._lsdb.insert(lsa)
         # Flood LSA to neighbors
         self._flood(lsa)
+        # Update routing table
+        self._update_routing_table()
 
     def iface_create(self, name, bandwidth, port):
         if name not in self._interfaces:
@@ -221,23 +235,25 @@ class IfaceRx(asynchat.async_chat):
             t = Timer(ospf.DEAD_INTERVAL, self.router._break_adjacency, args=(neighbor_id, ))
             t.start()
             self.router._timers[neighbor_id] = t
-            neighbor_reup = (neighbor_id not in self.router._neighbors)
-            self.router._neighbors[neighbor_id] = self.iface_name
+            topology_changed = (neighbor_id not in self.router._neighbors)
+            self.router._neighbors[neighbor_id] = (self.iface_name, packet.address, packet.netmask)
             if self.router._hostname not in self.router._lsdb:
                 print 'Initial Link State advertisement'
                 self.router._advertise()
-            elif neighbor_reup and neighbor_id in self.router._lsdb:
-                print 'network topology changed'
+            elif topology_changed:
+                print 'Network topology changed'
                 self.router._advertise()
                 # Re-flood link state packets from currently re-upped neighbor
-                packet = self.router._lsdb[neighbor_id]
-                self.router._flood(packet)
+                if neighbor_id in self.router._lsdb:
+                    packet = self.router._lsdb[neighbor_id]
+                    self.router._flood(packet)
         elif isinstance(packet, ospf.LinkStatePacket):
             print 'Received LSA from %s' % (packet.adv_router)
-            #print packet
             # Insert to Link State database
             if self.router._lsdb.insert(packet):
                 self.router._flood(packet, self.iface_name)
+                # Update routing table
+                self.router._update_routing_table()
         self.handle_close()
         print self.router._lsdb.values()
         print '\n'

@@ -76,7 +76,8 @@ class Database(dict):
         paths = []
         for lsa in self.values():
             nodes.append(lsa.adv_router)
-            for neighbor_id, cost in lsa.neighbors.iteritems():
+            for neighbor_id, data in lsa.neighbors.iteritems():
+                cost = data[2]
                 g.add_e(lsa.adv_router, neighbor_id, cost)
         if router_id in nodes:
             nodes.remove(router_id)
