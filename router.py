@@ -85,14 +85,15 @@ class Router(object):
 
     def _flood(self, packet, source_iface=None):
         """Flood received packet to other interfaces"""
+        if packet.adv_router == self._hostname:
+            print 'Flooding LSA originating from self'
+        else:
+            print 'Flooding LSA received from %s' % (packet.adv_router, )
         interfaces = []
         for data in self._neighbors.values():
             interfaces.append(data[0])
         if source_iface in interfaces:
-            print 'Flooding LSA received from %s' % (source_iface, )
             interfaces.remove(source_iface)
-        else:
-            print 'Flooding LSA originating from self'
         for iface_name in interfaces:
             iface = self._interfaces[iface_name]
             iface.transmit(packet)
