@@ -215,33 +215,23 @@ class IfaceRx(asynchat.async_chat):
         # Deserialize packet
         packet = pickle.loads(data)
         if isinstance(packet, ospf.HelloPacket):
-            if packet.router_id in self.router._timers:
-                self.router._timers[packet.router_id].cancel()
-            t = Timer(ospf.DEAD_INTERVAL, self.router._break_adjacency, args=(packet.router_id, ))
+            neighbor_id = packet.router_id
+            if neighbor_id in self.router._timers:
+                self.router._timers[neighbor_id].cancel()
+            t = Timer(ospf.DEAD_INTERVAL, self.router._break_adjacency, args=(neighbor_id, ))
             t.start()
-            self.router._timers[packet.router_id] = t
-            current_neighbors = self.router._neighbors.keys()
-            self.router._neighbors[packet.router_id] = self.iface_name
-            # Advertise LSA if there are changes
-            if self.router._hostname in self.router._lsdb:
-                lsdb_neighbors = self.router._lsdb[self.router._hostname].neighbors.keys()
-                lsdb_neighbors.sort()
-                current_neighbors.sort()
-                if lsdb_neighbors != current_neighbors:
-                    print 'network topology changed'
-                    self.router._advertise()
-                    # Re-flood link state packets from currently re-upped neighbor
-                    #for n in current_neighbors:
-                    #    if n in lsdb_neighbors:
-                    #        lsdb_neighbors.remove(n)
-                    #map(lsdb_neighbors.remove, current_neighbors)
-                    #print lsdb_neighbors
-                    #for neighbor_id in lsdb_neighbors:
-                    #    packet = self.router._lsdb[neighbor_id]
-                    #self.router._flood(packet)
-            else:
+            self.router._timers[neighbor_id] = t
+            neighbor_reup = (neighbor_id not in self.router._neighbors)
+            self.router._neighbors[neighbor_id] = self.iface_name
+            if self.router._hostname not in self.router._lsdb:
+                print 'Initial Link State advertisement'
+                self.router._advertise()
+            elif neighbor_reup and neighbor_id in self.router._lsdb:
                 print 'network topology changed'
                 self.router._advertise()
+                # Re-flood link state packets from currently re-upped neighbor
+                packet = self.router._lsdb[neighbor_id]
+                self.router._flood(packet)
         elif isinstance(packet, ospf.LinkStatePacket):
             print 'Received LSA from %s' % (packet.adv_router)
             #print packet
