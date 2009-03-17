@@ -7,7 +7,7 @@ from threading import Timer
 import dijkstra
 
 
-TIME_SCALE = 60 # 1 minute is to 1 second
+TIME_SCALE = 30 # 1 minute (60 seconds) is to 2 seconds (60 / 2 = 30)
 
 
 def _scale_time(minutes):
