@@ -262,11 +262,10 @@ class IfaceRx(asynchat.async_chat):
                 if neighbor_id in self.router._lsdb:
                     packet = self.router._lsdb[neighbor_id]
                     self.router._flood(packet)
-                else:
-                    iface = self.router._interfaces[self.iface_name]
-                    # New neighbor: sync LSDB
-                    for lsa in self.router._lsdb.values():
-                        iface.transmit(lsa)
+                # Sync LSDB with neighbor
+                iface = self.router._interfaces[self.iface_name]
+                for lsa in self.router._lsdb.values():
+                    iface.transmit(lsa)
         elif isinstance(packet, ospf.LinkStatePacket):
             self.router.log('Received LSA from %s' % (packet.adv_router, ))
             # Insert to Link State database
