@@ -38,10 +38,11 @@ class LinkStatePacket(object):
 
 class HelloPacket(object):
 
-    def __init__(self, router_id, address, netmask):
+    def __init__(self, router_id, address, netmask, seen):
         self.router_id = router_id
         self.address = address
         self.netmask = netmask
+        self.seen = seen
 
 
 class Database(dict):

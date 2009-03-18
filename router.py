@@ -41,6 +41,7 @@ class Router(object):
         self._timers = {}
         self._interfaces = {}
         self._neighbors = {}
+        self._seen = {}
 
     def __del__(self):
         self.stop()
@@ -54,7 +55,7 @@ class Router(object):
 
     def _refresh_lsa(self):
         if self._hostname in self._lsdb:
-            self.log('Refreshing LSA')
+            self.log('Refreshing own LSA')
             lsa = self._lsdb[self._hostname]
             # reset age
             lsa.age = 1
@@ -67,16 +68,20 @@ class Router(object):
 
     def _hello(self):
         """Establish adjacency"""
+        seen = self._seen.keys()
         for iface in self._interfaces.values():
-            packet = ospf.HelloPacket(self._hostname, iface.address, iface.netmask)
+            packet = ospf.HelloPacket(self._hostname, iface.address, iface.netmask, seen)
             iface.transmit(packet)
+        for neighbor_id in self._seen:
+            if neighbor_id not in self._neighbors:
+                self._sync_lsdb(neighbor_id)
         # Reschedule
         t = Timer(ospf.HELLO_INTERVAL, self._hello)
         t.start()
         self._timers['hello'] = t
 
     def _update_routing_table(self):
-        self.log('Recalculating shortest paths. Updating routing table.')
+        self.log('Recalculating shortest paths and updating routing table')
         self._table = RoutingTable()
         for path in self._lsdb.get_shortest_paths(self._hostname):
             next_hop, before_dest, dest, cost = path
@@ -85,20 +90,20 @@ class Router(object):
             dest_net = get_network_address(dest_addr, netmask)
             r = Route(dest_net, gateway, netmask, cost, iface)
             self._table.append(r)
-        #self.log(self._table)
 
     def _break_adjacency(self, neighbor_id):
         del self._timers[neighbor_id]
         del self._neighbors[neighbor_id]
+        del self._seen[neighbor_id]
         self.log(' '.join([neighbor_id, 'is down']))
         self._advertise()
 
     def _flood(self, packet, source_iface=None):
         """Flood received packet to other interfaces"""
         if packet.adv_router == self._hostname:
-            self.log('Flooding LSA originating from self')
+            self.log('Flooding own LSA')
         else:
-            self.log('Flooding LSA received from %s' % (packet.adv_router, ))
+            self.log('Flooding LSA of %s' % (packet.adv_router, ))
         interfaces = []
         for data in self._neighbors.values():
             interfaces.append(data[0])
@@ -127,6 +132,26 @@ class Router(object):
         self._flood(lsa)
         # Update routing table
         self._update_routing_table()
+
+    def _sync_lsdb(self, neighbor_id):
+        topology_changed = (neighbor_id not in self._neighbors)
+        if topology_changed:
+            self.log('Adjacency established with %s' % (neighbor_id, ))
+        self._neighbors[neighbor_id] = self._seen[neighbor_id]
+        if self._hostname not in self._lsdb:
+            self.log('Creating initial LSA')
+            self._advertise()
+        elif topology_changed:
+            self._advertise()
+            # Re-flood link state packets from currently re-upped neighbor
+            if neighbor_id in self._lsdb:
+                packet = self._lsdb[neighbor_id]
+                self._flood(packet)
+            # Sync LSDB with neighbor
+            iface_name = self._neighbors[neighbor_id][0]
+            iface = self._interfaces[iface_name]
+            for lsa in self._lsdb.values():
+                iface.transmit(lsa)
 
     def iface_create(self, name, bandwidth, port):
         if name not in self._interfaces:
@@ -169,7 +194,7 @@ class Interface(asyncore.dispatcher):
         self.netmask = None
         self.remote_end = None
         self.connections = {}
-        self.router.log('%s up.' % (self.name, ))
+        self.router.log('%s up' % (self.name, ))
 
     @staticmethod
     def writable():
@@ -179,11 +204,10 @@ class Interface(asyncore.dispatcher):
         self.close()
         for conn in self.connections.values():
             conn.handle_close()
-        self.router.log('%s down.' % (self.name, ))
+        self.router.log('%s down' % (self.name, ))
 
     def handle_accept(self):
         conn, addr = self.accept()
-        #self.router.log('Connection accepted: %s' % (addr, ))
         # Dispatch connection to a IfaceRx
         IfaceRx(self.router, self.name, self.connections, conn)
 
@@ -245,44 +269,31 @@ class IfaceRx(asynchat.async_chat):
         packet = pickle.loads(data)
         if isinstance(packet, ospf.HelloPacket):
             neighbor_id = packet.router_id
+            # Reset Dead timer
             if neighbor_id in self.router._timers:
                 self.router._timers[neighbor_id].cancel()
             t = Timer(ospf.DEAD_INTERVAL, self.router._break_adjacency, args=(neighbor_id, ))
             t.start()
             self.router._timers[neighbor_id] = t
-            topology_changed = (neighbor_id not in self.router._neighbors)
-            self.router._neighbors[neighbor_id] = (self.iface_name, packet.address, packet.netmask)
-            if self.router._hostname not in self.router._lsdb:
-                self.router.log('Initial Link State advertisement')
-                self.router._advertise()
-            elif topology_changed:
-                self.router.log('Network topology changed')
-                self.router._advertise()
-                # Re-flood link state packets from currently re-upped neighbor
-                if neighbor_id in self.router._lsdb:
-                    packet = self.router._lsdb[neighbor_id]
-                    self.router._flood(packet)
-                # Sync LSDB with neighbor
-                iface = self.router._interfaces[self.iface_name]
-                for lsa in self.router._lsdb.values():
-                    iface.transmit(lsa)
+            self.router._seen[neighbor_id] = (self.iface_name, packet.address, packet.netmask)
+            if self.router._hostname in packet.seen:
+                self.router._sync_lsdb(neighbor_id)
         elif isinstance(packet, ospf.LinkStatePacket):
-            self.router.log('Received LSA from %s' % (packet.adv_router, ))
+            self.router.log('Received LSA of %s via %s' % (packet.adv_router, self.iface_name))
             # Insert to Link State database
             if self.router._lsdb.insert(packet):
-                self.router.log('Merged LSA from %s' % (packet.adv_router, ))
+                self.router.log('Merged LSA of %s to the LSDB' % (packet.adv_router, ))
                 self.router._flood(packet, self.iface_name)
                 # Update routing table
                 self.router._update_routing_table()
+            else:
+                self.router.log('Discarded LSA of %s (outdated or already in the LSDB)' % (packet.adv_router, ))
         self.handle_close()
-        #print self.router._lsdb.values()
-        #print '\n'
 
     def handle_close(self):
         if self._fileno in self.connections:
             del self.connections[self._fileno]
         self.close()
-        #self.router.log('Connection closed: %s' % (self.addr, ))
 
 
 class Route(object):
