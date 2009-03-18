@@ -37,7 +37,7 @@ def main():
         host = cfg.get(link, 'host')
         port = int(cfg.get(link, 'port'))
         router.iface_config(name, address, netmask, host, port)
-        cols = [name, address, netmask, link]
+        cols = [name, address, netmask, bandwidth, link]
         for val in cols:
             item = QtGui.QTableWidgetItem(val)
             w.interfaces.setItem(ifaces.index(iface), cols.index(val), item)

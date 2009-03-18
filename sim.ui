@@ -58,6 +58,11 @@
       </column>
       <column>
        <property name="text" >
+        <string>Bandwidth</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
         <string>Remote Node</string>
        </property>
       </column>
