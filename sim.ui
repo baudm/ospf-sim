@@ -1,130 +1,174 @@
 <ui version="4.0" >
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow" >
-  <property name="geometry" >
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>1014</width>
-    <height>600</height>
-   </rect>
+  <property name="sizePolicy" >
+   <sizepolicy vsizetype="Preferred" hsizetype="Fixed" >
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle" >
    <string>MainWindow</string>
   </property>
-  <widget class="QWidget" name="centralwidget" >
-   <widget class="QTableWidget" name="tableWidget" >
-    <property name="geometry" >
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>511</width>
-      <height>361</height>
-     </rect>
-    </property>
-    <column>
-     <property name="text" >
-      <string>Destination</string>
-     </property>
-    </column>
-    <column>
-     <property name="text" >
-      <string>Gateway</string>
-     </property>
-    </column>
-    <column>
-     <property name="text" >
-      <string>Netmask</string>
-     </property>
-    </column>
-    <column>
-     <property name="text" >
-      <string>Metric</string>
-     </property>
-    </column>
-    <column>
-     <property name="text" >
-      <string>Interface</string>
-     </property>
-    </column>
-   </widget>
-   <widget class="QTableWidget" name="tableWidget_2" >
-    <property name="geometry" >
-     <rect>
-      <x>510</x>
-      <y>0</y>
-      <width>491</width>
-      <height>361</height>
-     </rect>
-    </property>
-    <column>
-     <property name="text" >
-      <string>RouterID</string>
-     </property>
-    </column>
-    <column>
-     <property name="text" >
-      <string>NeighborID</string>
-     </property>
-    </column>
-    <column>
-     <property name="text" >
-      <string>Cost</string>
-     </property>
-    </column>
-   </widget>
-   <widget class="QListWidget" name="listWidget" >
-    <property name="geometry" >
-     <rect>
-      <x>0</x>
-      <y>371</y>
-      <width>511</width>
-      <height>181</height>
-     </rect>
-    </property>
-    <item>
-     <property name="text" >
-      <string>sdasd</string>
-     </property>
-    </item>
-   </widget>
-   <widget class="QTableWidget" name="tableWidget_3" >
-    <property name="geometry" >
-     <rect>
-      <x>520</x>
-      <y>370</y>
-      <width>481</width>
-      <height>192</height>
-     </rect>
-    </property>
-    <column>
-     <property name="text" >
-      <string>Interface</string>
-     </property>
-    </column>
-    <column>
-     <property name="text" >
-      <string>IP Address</string>
-     </property>
-    </column>
-    <column>
-     <property name="text" >
-      <string>Netmask</string>
-     </property>
-    </column>
-   </widget>
-  </widget>
-  <widget class="QMenuBar" name="menubar" >
-   <property name="geometry" >
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1014</width>
-     <height>25</height>
-    </rect>
+  <widget class="QWidget" name="widget" >
+   <property name="sizePolicy" >
+    <sizepolicy vsizetype="Preferred" hsizetype="Fixed" >
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
    </property>
+   <layout class="QFormLayout" name="formLayout" >
+    <item row="0" column="0" >
+     <widget class="QTableWidget" name="interfaces" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Minimum" hsizetype="Fixed" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize" >
+       <size>
+        <width>550</width>
+        <height>100</height>
+       </size>
+      </property>
+      <property name="editTriggers" >
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="alternatingRowColors" >
+       <bool>true</bool>
+      </property>
+      <property name="selectionBehavior" >
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <column>
+       <property name="text" >
+        <string>Interface</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>IP Address</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Netmask</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Remote Node</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="1" column="0" >
+     <widget class="QTableWidget" name="linkStateDb" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Minimum" hsizetype="Fixed" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize" >
+       <size>
+        <width>550</width>
+        <height>300</height>
+       </size>
+      </property>
+      <property name="editTriggers" >
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="alternatingRowColors" >
+       <bool>true</bool>
+      </property>
+      <property name="selectionBehavior" >
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <column>
+       <property name="text" >
+        <string>RouterID</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Seq. No</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Age</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>NeighborID</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Cost</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="2" column="0" >
+     <widget class="QTableWidget" name="routingTable" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Minimum" hsizetype="Fixed" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize" >
+       <size>
+        <width>550</width>
+        <height>150</height>
+       </size>
+      </property>
+      <property name="editTriggers" >
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="alternatingRowColors" >
+       <bool>true</bool>
+      </property>
+      <property name="selectionBehavior" >
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <column>
+       <property name="text" >
+        <string>Destination</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Gateway</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Netmask</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Metric</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Interface</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+   </layout>
+   <zorder>layoutWidget</zorder>
+   <zorder>textEdit</zorder>
+   <zorder>interfaces</zorder>
+   <zorder>routingTable</zorder>
   </widget>
-  <widget class="QStatusBar" name="statusbar" />
  </widget>
  <resources/>
  <connections/>
