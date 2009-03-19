@@ -244,7 +244,6 @@ class Interface(asyncore.dispatcher):
 class IfaceTx(asynchat.async_chat):
 
     ac_in_buffer_size = 0
-    ac_out_buffer_size = 2048
 
     def __init__(self, address, connections):
         asynchat.async_chat.__init__(self)
@@ -268,8 +267,7 @@ class IfaceTx(asynchat.async_chat):
 
 class IfaceRx(asynchat.async_chat):
 
-    ac_in_buffer_size = 2048
-    ac_out_buffer_size = 2048
+    ac_out_buffer_size = 0
 
     def __init__(self, router, name, connections, conn):
         asynchat.async_chat.__init__(self, conn)
