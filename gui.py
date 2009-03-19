@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import sys
@@ -34,6 +33,8 @@ def main():
 
     configfile = QtGui.QFileDialog.getOpenFileName(ui, 'Open router configuration file', '', '*.cfg')
     if not configfile:
+        if len(sys.argv) != 2:
+            sys.exit(1)
         configfile = sys.argv[1]
     cfg = SafeConfigParser()
     cfg.read(str(configfile))
@@ -108,7 +109,3 @@ def main():
     signal.signal(signal.SIGINT, lambda s, f: ui.close())
     # Start event loop
     sys.exit(app.exec_())
-
-
-if __name__ == '__main__':
-    main()
