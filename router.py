@@ -3,8 +3,6 @@
 import socket
 import asyncore
 import asynchat
-import time
-from threading import Timer
 try:
     import cPickle as pickle
 except ImportError:
@@ -16,9 +14,15 @@ import ospf
 _terminator = '\0E\0O\0F\0'
 
 
+poll = asyncore.poll
+
+
+def mktimer(interval, callback, args=(), single_shot=False):
+    raise NotImplementedError('specify your own function')
+
+
 def log(msg):
-    """Default log function"""
-    print time.ctime(), '\t', msg
+    print 'log:', msg
 
 
 class Route(object):
@@ -39,6 +43,9 @@ class RoutingTable(list):
             routes.append("%s\t%s\t%s\t%.2f\t%s" % (r.dest, r.gateway, r.netmask, r.metric, r.iface))
         return '\n'.join(routes)
 
+    def clear(self):
+        del self[:]
+
 
 class Router(object):
 
@@ -46,10 +53,10 @@ class Router(object):
         self._hostname = hostname
         self._table = RoutingTable()
         self._lsdb = ospf.Database()
-        self._timers = {}
         self._interfaces = {}
         self._neighbors = {}
         self._seen = {}
+        self._init_timers()
 
     def __del__(self):
         self.stop()
@@ -63,12 +70,17 @@ class Router(object):
             netadd.append(str(int(addr[i]) & int(netmask[i])))
         return '.'.join(netadd)
 
+    def _init_timers(self):
+        self._dead_timer = None
+        self._timers = {}
+        self._timers['lsdb'] = mktimer(ospf.AGE_INTERVAL, self._update_lsdb)
+        self._timers['refresh_lsa'] = mktimer(ospf.LS_REFRESH_TIME, self._refresh_lsa)
+        self._timers['hello'] = mktimer(ospf.HELLO_INTERVAL, self._hello)
+
     def _update_lsdb(self):
-        self._lsdb.update()
-        # Reschedule
-        t = Timer(ospf.AGE_INTERVAL, self._update_lsdb)
-        t.start()
-        self._timers['lsdb'] = t
+        flushed = self._lsdb.update()
+        if flushed:
+            log('LSA(s) of %s reached MaxAge and was/were flushed from the LSDB' % (', '.join(flushed), ))
 
     def _refresh_lsa(self):
         if self._hostname in self._lsdb:
@@ -78,10 +90,6 @@ class Router(object):
             lsa.age = 1
             # and flood to network
             self._advertise()
-        # Reschedule
-        t = Timer(ospf.LS_REFRESH_TIME, self._refresh_lsa)
-        t.start()
-        self._timers['refresh_lsa'] = t
 
     def _hello(self):
         """Establish adjacency"""
@@ -92,14 +100,10 @@ class Router(object):
         for neighbor_id in self._seen:
             if neighbor_id not in self._neighbors:
                 self._sync_lsdb(neighbor_id)
-        # Reschedule
-        t = Timer(ospf.HELLO_INTERVAL, self._hello)
-        t.start()
-        self._timers['hello'] = t
 
     def _update_routing_table(self):
         log('Recalculating shortest paths and updating routing table')
-        self._table = RoutingTable()
+        self._table.clear()
         for path in self._lsdb.get_shortest_paths(self._hostname):
             next_hop, before_dest, dest, cost = path
             iface, gateway = self._lsdb[self._hostname].neighbors[next_hop][:2]
@@ -109,6 +113,8 @@ class Router(object):
             self._table.append(r)
 
     def _break_adjacency(self, neighbor_id):
+        # Save reference QObject errors
+        self._dead_timer = self._timers[neighbor_id]
         del self._timers[neighbor_id]
         del self._neighbors[neighbor_id]
         del self._seen[neighbor_id]
@@ -181,16 +187,14 @@ class Router(object):
         iface.remote_end = (host, port)
 
     def start(self):
-        # Bootstrap processes
-        self._update_lsdb()
-        self._refresh_lsa()
+        # Start timers
+        for t in self._timers.values():
+            t.start()
         self._hello()
-        # start asyncore framework
-        asyncore.loop()
 
     def stop(self):
         for t in self._timers.values():
-            t.cancel()
+            t.stop()
         for iface in self._interfaces.values():
             iface.handle_close()
 
@@ -288,8 +292,8 @@ class IfaceRx(asynchat.async_chat):
             neighbor_id = packet.router_id
             # Reset Dead timer
             if neighbor_id in self.router._timers:
-                self.router._timers[neighbor_id].cancel()
-            t = Timer(ospf.DEAD_INTERVAL, self.router._break_adjacency, args=(neighbor_id, ))
+                self.router._timers[neighbor_id].stop()
+            t = mktimer(ospf.DEAD_INTERVAL, self.router._break_adjacency, (neighbor_id, ), True)
             t.start()
             self.router._timers[neighbor_id] = t
             self.router._seen[neighbor_id] = (self.iface_name, packet.address, packet.netmask)

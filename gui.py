@@ -2,83 +2,113 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from threading import Thread
+import signal
+import time
 from ConfigParser import SafeConfigParser
 
 from PyQt4 import QtCore, QtGui, uic
 
-from router import Router
+import router
+
+
+def mktimer(interval, callback, args=(), single_shot=False):
+    t = QtCore.QTimer()
+    t.setInterval(1000 * interval)
+    def timeout():
+        callback(*args)
+    t.setSingleShot(single_shot)
+    QtCore.QObject.connect(t, QtCore.SIGNAL('timeout()'), timeout)
+    return t
 
 
 def main():
     app = QtGui.QApplication(sys.argv)
-    w = uic.loadUi('sim.ui')
-    configfile = QtGui.QFileDialog.getOpenFileName(w, 'Open router config file', '/home/darwin', '*.cfg')
+    ui = uic.loadUi('sim.ui')
+
+    def log(msg):
+        ui.messages.append('%s    %s' % (time.ctime().split()[3], msg))
+
+    # Override default functions
+    router.mktimer = mktimer
+    router.log = log
+
+    configfile = QtGui.QFileDialog.getOpenFileName(ui, 'Open r config file', '/home/darwin', '*.cfg')
     if not configfile:
         configfile = sys.argv[1]
     cfg = SafeConfigParser()
     cfg.read(str(configfile))
+
     hostname = cfg.get('Local', 'hostname')
-    w.setWindowTitle(hostname)
-    router = Router(hostname)
-    ifaces = [i for i in cfg.sections() if i.startswith('Local:')]
-    w.interfaces.setRowCount(len(ifaces))
+    ui.setWindowTitle(hostname)
+    r = router.Router(hostname)
+
     # Create and configure Router interfaces
+    ifaces = [i for i in cfg.sections() if i.startswith('Local:')]
+    ui.interfaces.setRowCount(len(ifaces))
     for iface in ifaces:
         # Create
         name = iface.split(':')[1]
         bandwidth = cfg.get(iface, 'bandwidth')
         port = int(cfg.get(iface, 'port'))
-        router.iface_create(name, bandwidth, port)
+        r.iface_create(name, bandwidth, port)
         # Configure
         address = cfg.get(iface, 'address')
         netmask = cfg.get(iface, 'netmask')
         link = cfg.get(iface, 'link')
         host = cfg.get(link, 'host')
         port = int(cfg.get(link, 'port'))
-        router.iface_config(name, address, netmask, host, port)
+        r.iface_config(name, address, netmask, host, port)
         cols = [name, address, netmask, bandwidth, link]
         for val in cols:
             item = QtGui.QTableWidgetItem(val)
-            w.interfaces.setItem(ifaces.index(iface), cols.index(val), item)
+            ui.interfaces.setItem(ifaces.index(iface), cols.index(val), item)
 
-    def update():
-        rows = len(router._table)
-        w.routingTable.clearContents()
-        w.routingTable.setRowCount(rows)
+    def refresh_ui():
+        rows = len(r._table)
+        ui.routingTable.clearContents()
+        ui.routingTable.setRowCount(rows)
         for i in xrange(rows):
             col_count = 0
             for col in ('dest', 'gateway', 'netmask', 'metric', 'iface'):
-                val = getattr(router._table[i], col)
+                val = getattr(r._table[i], col)
                 item = QtGui.QTableWidgetItem(str(val))
-                w.routingTable.setItem(i, col_count, item)
+                ui.routingTable.setItem(i, col_count, item)
                 col_count += 1
 
         row_count = 0
-        w.linkStateDb.clearContents()
-        for lsa in router._lsdb.values():
+        ui.linkStateDb.clearContents()
+        for lsa in r._lsdb.values():
             for neighbor, data in lsa.neighbors.iteritems():
-                w.linkStateDb.setRowCount(row_count + 1)
+                ui.linkStateDb.setRowCount(row_count + 1)
                 cost = data[3]
                 col_count = 0
                 for val in (lsa.adv_router, lsa.seq_no, lsa.age, neighbor, cost):
                     item = QtGui.QTableWidgetItem(str(val))
-                    w.linkStateDb.setItem(row_count, col_count, item)
+                    ui.linkStateDb.setItem(row_count, col_count, item)
                     col_count += 1
                 row_count += 1
 
-    timer = QtCore.QTimer()
-    timer.start(1000)
-
-    QtCore.QObject.connect(timer, QtCore.SIGNAL('timeout()'), update)
-    QtCore.QObject.connect(app, QtCore.SIGNAL('lastWindowClosed()'), router.stop)
-    w.show()
-    t = Thread(target=router.start)
-    t.setDaemon(True)
-    t.start()
-    app.exec_()
+    ui_timer = QtCore.QTimer()
+    log_timer = QtCore.QTimer()
+    router_timer = QtCore.QTimer()
+    # Setup signal-slot connections
+    QtCore.QObject.connect(app, QtCore.SIGNAL('lastWindowClosed()'), r.stop)
+    QtCore.QObject.connect(ui_timer, QtCore.SIGNAL('timeout()'), refresh_ui)
+    QtCore.QObject.connect(log_timer, QtCore.SIGNAL('timeout()'), ui.messages.clear)
+    QtCore.QObject.connect(router_timer, QtCore.SIGNAL('timeout()'), router.poll)
+    # Start timers
+    ui_timer.start(1000)
+    log_timer.start(120000)
+    router_timer.start(500)
+    # Start router and show UI
+    r.start()
+    ui.show()
+    # Setup signal handlers
+    signal.signal(signal.SIGTERM, lambda s, f: ui.close())
+    signal.signal(signal.SIGINT, lambda s, f: ui.close())
+    # Start event loop
+    sys.exit(app.exec_())
 
 
 if __name__ == '__main__':
     main()
-

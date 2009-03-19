@@ -1,22 +1,18 @@
 <ui version="4.0" >
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow" >
-  <property name="sizePolicy" >
-   <sizepolicy vsizetype="Preferred" hsizetype="Fixed" >
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>562</width>
+    <height>896</height>
+   </rect>
   </property>
   <property name="windowTitle" >
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="widget" >
-   <property name="sizePolicy" >
-    <sizepolicy vsizetype="Preferred" hsizetype="Fixed" >
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
    <layout class="QFormLayout" name="formLayout" >
     <item row="0" column="0" >
      <widget class="QTableWidget" name="interfaces" >
@@ -168,11 +164,30 @@
       </column>
      </widget>
     </item>
+    <item row="3" column="0" >
+     <widget class="QTextEdit" name="messages" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Minimum" hsizetype="Fixed" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize" >
+       <size>
+        <width>550</width>
+        <height>130</height>
+       </size>
+      </property>
+      <property name="readOnly" >
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
    </layout>
-   <zorder>layoutWidget</zorder>
-   <zorder>textEdit</zorder>
    <zorder>interfaces</zorder>
    <zorder>routingTable</zorder>
+   <zorder>messages</zorder>
+   <zorder>linkStateDb</zorder>
   </widget>
  </widget>
  <resources/>
