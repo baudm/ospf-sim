@@ -16,23 +16,31 @@ import ospf
 _terminator = '\0E\0O\0F\0'
 
 
-def get_network_address(addr, netmask):
-    addr = addr.split('.')
-    netmask = netmask.split('.')
-    netadd = []
-    for i in xrange(4):
-        netadd.append(str(int(addr[i]) & int(netmask[i])))
-    return '.'.join(netadd)
-
-
-def logger(self, msg):
+def log(msg):
     """Default log function"""
     print time.ctime(), '\t', msg
 
 
-class Router(object):
+class Route(object):
 
-    log = logger
+    def __init__(self, dest, gateway, netmask, metric, iface):
+        self.dest = dest
+        self.gateway = gateway
+        self.netmask = netmask
+        self.metric = metric
+        self.iface = iface
+
+
+class RoutingTable(list):
+
+    def __repr__(self):
+        routes = ['Dest\tGateway\tNetmask\tMetric\tInterface']
+        for r in self:
+            routes.append("%s\t%s\t%s\t%.2f\t%s" % (r.dest, r.gateway, r.netmask, r.metric, r.iface))
+        return '\n'.join(routes)
+
+
+class Router(object):
 
     def __init__(self, hostname):
         self._hostname = hostname
@@ -46,6 +54,15 @@ class Router(object):
     def __del__(self):
         self.stop()
 
+    @staticmethod
+    def _get_netadd(addr, netmask):
+        addr = addr.split('.')
+        netmask = netmask.split('.')
+        netadd = []
+        for i in xrange(4):
+            netadd.append(str(int(addr[i]) & int(netmask[i])))
+        return '.'.join(netadd)
+
     def _update_lsdb(self):
         self._lsdb.update()
         # Reschedule
@@ -55,7 +72,7 @@ class Router(object):
 
     def _refresh_lsa(self):
         if self._hostname in self._lsdb:
-            self.log('Refreshing own LSA')
+            log('Refreshing own LSA')
             lsa = self._lsdb[self._hostname]
             # reset age
             lsa.age = 1
@@ -81,13 +98,13 @@ class Router(object):
         self._timers['hello'] = t
 
     def _update_routing_table(self):
-        self.log('Recalculating shortest paths and updating routing table')
+        log('Recalculating shortest paths and updating routing table')
         self._table = RoutingTable()
         for path in self._lsdb.get_shortest_paths(self._hostname):
             next_hop, before_dest, dest, cost = path
             iface, gateway = self._lsdb[self._hostname].neighbors[next_hop][:2]
             dest_addr, netmask = self._lsdb[before_dest].neighbors[dest][1:3]
-            dest_net = get_network_address(dest_addr, netmask)
+            dest_net = self._get_netadd(dest_addr, netmask)
             r = Route(dest_net, gateway, netmask, cost, iface)
             self._table.append(r)
 
@@ -95,15 +112,15 @@ class Router(object):
         del self._timers[neighbor_id]
         del self._neighbors[neighbor_id]
         del self._seen[neighbor_id]
-        self.log(' '.join([neighbor_id, 'is down']))
+        log(' '.join([neighbor_id, 'is down']))
         self._advertise()
 
     def _flood(self, packet, source_iface=None):
         """Flood received packet to other interfaces"""
         if packet.adv_router == self._hostname:
-            self.log('Flooding own LSA')
+            log('Flooding own LSA')
         else:
-            self.log('Flooding LSA of %s' % (packet.adv_router, ))
+            log('Flooding LSA of %s' % (packet.adv_router, ))
         interfaces = []
         for data in self._neighbors.values():
             interfaces.append(data[0])
@@ -136,10 +153,10 @@ class Router(object):
     def _sync_lsdb(self, neighbor_id):
         topology_changed = (neighbor_id not in self._neighbors)
         if topology_changed:
-            self.log('Adjacency established with %s' % (neighbor_id, ))
+            log('Adjacency established with %s' % (neighbor_id, ))
         self._neighbors[neighbor_id] = self._seen[neighbor_id]
         if self._hostname not in self._lsdb:
-            self.log('Creating initial LSA')
+            log('Creating initial LSA')
             self._advertise()
         elif topology_changed:
             self._advertise()
@@ -194,7 +211,7 @@ class Interface(asyncore.dispatcher):
         self.netmask = None
         self.remote_end = None
         self.connections = {}
-        self.router.log('%s up' % (self.name, ))
+        log('%s up' % (self.name, ))
 
     @staticmethod
     def writable():
@@ -204,7 +221,7 @@ class Interface(asyncore.dispatcher):
         self.close()
         for conn in self.connections.values():
             conn.handle_close()
-        self.router.log('%s down' % (self.name, ))
+        log('%s down' % (self.name, ))
 
     def handle_accept(self):
         conn, addr = self.accept()
@@ -279,37 +296,18 @@ class IfaceRx(asynchat.async_chat):
             if self.router._hostname in packet.seen:
                 self.router._sync_lsdb(neighbor_id)
         elif isinstance(packet, ospf.LinkStatePacket):
-            self.router.log('Received LSA of %s via %s' % (packet.adv_router, self.iface_name))
+            log('Received LSA of %s via %s' % (packet.adv_router, self.iface_name))
             # Insert to Link State database
             if self.router._lsdb.insert(packet):
-                self.router.log('Merged LSA of %s to the LSDB' % (packet.adv_router, ))
+                log('Merged LSA of %s to the LSDB' % (packet.adv_router, ))
                 self.router._flood(packet, self.iface_name)
                 # Update routing table
                 self.router._update_routing_table()
             else:
-                self.router.log('Discarded LSA of %s (outdated or already in the LSDB)' % (packet.adv_router, ))
+                log('Discarded LSA of %s (outdated or already in the LSDB)' % (packet.adv_router, ))
         self.handle_close()
 
     def handle_close(self):
         if self._fileno in self.connections:
             del self.connections[self._fileno]
         self.close()
-
-
-class Route(object):
-
-    def __init__(self, dest, gateway, netmask, metric, iface):
-        self.dest = dest
-        self.gateway = gateway
-        self.netmask = netmask
-        self.metric = metric
-        self.iface = iface
-
-
-class RoutingTable(list):
-
-    def __repr__(self):
-        routes = ['Dest\tGateway\tNetmask\tMetric\tInterface']
-        for r in self:
-            routes.append("%s\t%s\t%s\t%.2f\t%s" % (r.dest, r.gateway, r.netmask, r.metric, r.iface))
-        return '\n'.join(routes)
