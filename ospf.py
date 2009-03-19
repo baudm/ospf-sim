@@ -62,14 +62,17 @@ class Database(dict):
 
     def flush(self):
         """Flush old entries"""
+        flushed = []
         for router_id in copy(self):
             if self[router_id].age > MAX_AGE:
                 del self[router_id]
+                flushed.append(router_id)
+        return flushed
 
     def update(self):
         for adv_router in self:
             self[adv_router].age += 1
-        self.flush()
+        return self.flush()
 
     def get_shortest_paths(self, router_id):
         g = dijkstra.Graph()
