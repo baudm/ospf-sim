@@ -20,7 +20,6 @@ DEAD_INTERVAL = 4 * HELLO_INTERVAL # typical value is 4 times the HELLO_INTERVAL
 AGE_INTERVAL = _scale_time(1) # 1 minute
 LS_REFRESH_TIME = _scale_time(30) # 30 minutes
 MAX_AGE = _scale_time(60) # 1 hour
-MAX_AGE_DIFF = _scale_time(15) # 15 minutes
 
 
 class LinkStatePacket(object):
