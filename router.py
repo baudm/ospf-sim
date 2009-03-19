@@ -253,7 +253,7 @@ class IfaceTx(asynchat.async_chat):
         self.connections = connections
 
     def handle_error(self):
-        self.close()
+        self.handle_close()
 
     @staticmethod
     def handle_connect():

@@ -32,7 +32,7 @@ def main():
     router.mktimer = mktimer
     router.log = log
 
-    configfile = QtGui.QFileDialog.getOpenFileName(ui, 'Open r config file', '/home/darwin', '*.cfg')
+    configfile = QtGui.QFileDialog.getOpenFileName(ui, 'Open router configuration file', '', '*.cfg')
     if not configfile:
         configfile = sys.argv[1]
     cfg = SafeConfigParser()
@@ -87,7 +87,7 @@ def main():
                     ui.linkStateDb.setItem(row_count, col_count, item)
                     col_count += 1
                 row_count += 1
-
+    # Create timers
     ui_timer = QtCore.QTimer()
     log_timer = QtCore.QTimer()
     router_timer = QtCore.QTimer()
