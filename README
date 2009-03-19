@@ -19,7 +19,7 @@ LSA Type
 * All transmitted and received LSAs are Router LSAs
 
 
-Network type: Point-to-Point
+Link type: Point-to-Point
 * All routers are connected via point-to-point links
 * Physical connections between routers are specified in the configuration files.
 * DR and BDR for each segment need not be elected since the network type is point-to-point
