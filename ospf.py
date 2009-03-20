@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 # http://www.lincoln.edu/math/rmyrick/ComputerNetworks/InetReference/89.htm
 
-from copy import copy
-from threading import Timer
-
 import dijkstra
 
 
@@ -62,10 +59,10 @@ class Database(dict):
     def flush(self):
         """Flush old entries"""
         flushed = []
-        for router_id in copy(self):
+        for router_id in self:
             if self[router_id].age > MAX_AGE:
-                del self[router_id]
                 flushed.append(router_id)
+        map(self.pop, flushed)
         return flushed
 
     def update(self):
