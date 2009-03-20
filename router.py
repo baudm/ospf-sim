@@ -147,13 +147,13 @@ class Router(object):
         if self._hostname in self._lsdb:
             lsa = self._lsdb[self._hostname]
             lsa.seq_no += 1
+            lsa.age = 1
             lsa.neighbors = neighbors
         else:
             lsa = ospf.LinkStatePacket(self._hostname, 1, 1, neighbors)
         self._lsdb.insert(lsa)
         # Flood LSA to neighbors
         self._flood(lsa)
-        # Update routing table
         self._update_routing_table()
 
     def _sync_lsdb(self, neighbor_id):
@@ -166,10 +166,6 @@ class Router(object):
             self._advertise()
         elif topology_changed:
             self._advertise()
-            # Re-flood link state packets from currently re-upped neighbor
-            if neighbor_id in self._lsdb:
-                packet = self._lsdb[neighbor_id]
-                self._flood(packet)
             # Sync LSDB with neighbor
             iface_name = self._neighbors[neighbor_id][0]
             iface = self._interfaces[iface_name]
@@ -298,15 +294,16 @@ class IfaceRx(asynchat.async_chat):
             if self.router._hostname in packet.seen:
                 self.router._sync_lsdb(neighbor_id)
         elif isinstance(packet, ospf.LinkStatePacket):
-            log('Received LSA of %s via %s' % (packet.adv_router, self.iface_name))
             # Insert to Link State database
             if self.router._lsdb.insert(packet):
-                log('Merged LSA of %s to the LSDB' % (packet.adv_router, ))
-                self.router._flood(packet, self.iface_name)
-                # Update routing table
-                self.router._update_routing_table()
-            else:
-                log('Discarded LSA of %s (outdated or already in the LSDB)' % (packet.adv_router, ))
+                if packet.adv_router == self.router._hostname:
+                    self.router._advertise()
+                else:
+                    log('Received and merged LSA of %s via %s' % (packet.adv_router, self.iface_name))
+                    self.router._flood(packet, self.iface_name)
+                    self.router._update_routing_table()
+            elif packet.adv_router == self.router._hostname and packet.seq_no == 1:
+                self.router._advertise()
         self.handle_close()
 
     def handle_close(self):
