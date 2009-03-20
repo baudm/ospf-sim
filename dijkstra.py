@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# From: http://en.wikipedia.org/wiki/Dijkstra's_algorithm
+# This code is licensed under the GNU Free Documentation License (http://www.gnu.org/licenses/fdl.html).
+# It uses material from the Wikipedia article "Dijkstra's algorithm" (http://en.wikipedia.org/wiki/Dijkstra's_algorithm).
 
 import heapq
 from collections import defaultdict
