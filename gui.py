@@ -22,7 +22,7 @@ def mktimer(interval, callback, args=(), single_shot=False):
 
 def main():
     app = QtGui.QApplication(sys.argv)
-    ui = uic.loadUi('sim.ui')
+    ui = uic.loadUi('simulator.ui')
 
     def log(msg):
         ui.messages.append('%s    %s' % (time.ctime().split()[3], msg))
