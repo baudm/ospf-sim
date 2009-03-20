@@ -156,7 +156,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QTextEdit" name="messages" >
+     <widget class="QPlainTextEdit" name="messages" >
       <property name="minimumSize" >
        <size>
         <width>550</width>
@@ -166,16 +166,21 @@
       <property name="toolTip" >
        <string>Status Messages</string>
       </property>
+      <property name="lineWrapMode" >
+       <enum>QPlainTextEdit::NoWrap</enum>
+      </property>
       <property name="readOnly" >
+       <bool>true</bool>
+      </property>
+      <property name="maximumBlockCount" >
+       <number>50</number>
+      </property>
+      <property name="centerOnScroll" >
        <bool>true</bool>
       </property>
      </widget>
     </item>
    </layout>
-   <zorder>interfaces</zorder>
-   <zorder>routingTable</zorder>
-   <zorder>messages</zorder>
-   <zorder>linkStateDb</zorder>
   </widget>
  </widget>
  <resources/>

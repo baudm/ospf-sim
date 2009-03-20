@@ -32,8 +32,11 @@ import router
 def mktimer(interval, callback, args=(), single_shot=False):
     t = QtCore.QTimer()
     t.setInterval(1000 * interval)
-    def timeout():
-        callback(*args)
+    if args:
+        def timeout():
+            callback(*args)
+    else:
+        timeout = callback
     t.setSingleShot(single_shot)
     QtCore.QObject.connect(t, QtCore.SIGNAL('timeout()'), timeout)
     return t
@@ -44,7 +47,7 @@ def main():
     ui = uic.loadUi('simulator.ui')
 
     def log(msg):
-        ui.messages.append('%s    %s' % (time.ctime().split()[3], msg))
+        ui.messages.appendPlainText('%s    %s' % (time.ctime().split()[3], msg))
 
     # Override default functions
     router.mktimer = mktimer
@@ -110,16 +113,13 @@ def main():
                 row_count += 1
     # Create timers
     ui_timer = QtCore.QTimer()
-    log_timer = QtCore.QTimer()
     router_timer = QtCore.QTimer()
     # Setup signal-slot connections
     QtCore.QObject.connect(app, QtCore.SIGNAL('lastWindowClosed()'), r.stop)
     QtCore.QObject.connect(ui_timer, QtCore.SIGNAL('timeout()'), refresh_ui)
-    QtCore.QObject.connect(log_timer, QtCore.SIGNAL('timeout()'), ui.messages.clear)
     QtCore.QObject.connect(router_timer, QtCore.SIGNAL('timeout()'), router.poll)
     # Start timers
     ui_timer.start(1000)
-    log_timer.start(180000)
     router_timer.start(500)
     # Start router and show UI
     r.start()
