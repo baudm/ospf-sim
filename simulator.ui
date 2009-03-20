@@ -5,28 +5,25 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>562</width>
-    <height>896</height>
+    <width>558</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="windowTitle" >
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="widget" >
-   <layout class="QFormLayout" name="formLayout" >
-    <item row="0" column="0" >
+   <layout class="QVBoxLayout" name="verticalLayout" >
+    <item>
      <widget class="QTableWidget" name="interfaces" >
-      <property name="sizePolicy" >
-       <sizepolicy vsizetype="Minimum" hsizetype="Fixed" >
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
       <property name="minimumSize" >
        <size>
         <width>550</width>
         <height>100</height>
        </size>
+      </property>
+      <property name="toolTip" >
+       <string>Interfaces</string>
       </property>
       <property name="editTriggers" >
        <set>QAbstractItemView::NoEditTriggers</set>
@@ -36,6 +33,9 @@
       </property>
       <property name="selectionBehavior" >
        <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <property name="sortingEnabled" >
+       <bool>true</bool>
       </property>
       <column>
        <property name="text" >
@@ -64,19 +64,16 @@
       </column>
      </widget>
     </item>
-    <item row="1" column="0" >
+    <item>
      <widget class="QTableWidget" name="linkStateDb" >
-      <property name="sizePolicy" >
-       <sizepolicy vsizetype="Minimum" hsizetype="Fixed" >
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
       <property name="minimumSize" >
        <size>
         <width>550</width>
         <height>300</height>
        </size>
+      </property>
+      <property name="toolTip" >
+       <string>Link State Database</string>
       </property>
       <property name="editTriggers" >
        <set>QAbstractItemView::NoEditTriggers</set>
@@ -86,6 +83,9 @@
       </property>
       <property name="selectionBehavior" >
        <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <property name="sortingEnabled" >
+       <bool>true</bool>
       </property>
       <column>
        <property name="text" >
@@ -114,19 +114,16 @@
       </column>
      </widget>
     </item>
-    <item row="2" column="0" >
+    <item>
      <widget class="QTableWidget" name="routingTable" >
-      <property name="sizePolicy" >
-       <sizepolicy vsizetype="Minimum" hsizetype="Fixed" >
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
       <property name="minimumSize" >
        <size>
         <width>550</width>
         <height>150</height>
        </size>
+      </property>
+      <property name="toolTip" >
+       <string>Routing Table</string>
       </property>
       <property name="editTriggers" >
        <set>QAbstractItemView::NoEditTriggers</set>
@@ -136,6 +133,9 @@
       </property>
       <property name="selectionBehavior" >
        <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <property name="sortingEnabled" >
+       <bool>true</bool>
       </property>
       <column>
        <property name="text" >
@@ -164,19 +164,16 @@
       </column>
      </widget>
     </item>
-    <item row="3" column="0" >
+    <item>
      <widget class="QTextEdit" name="messages" >
-      <property name="sizePolicy" >
-       <sizepolicy vsizetype="Minimum" hsizetype="Fixed" >
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
       <property name="minimumSize" >
        <size>
         <width>550</width>
         <height>130</height>
        </size>
+      </property>
+      <property name="toolTip" >
+       <string>Status Messages</string>
       </property>
       <property name="readOnly" >
        <bool>true</bool>
