@@ -11,7 +11,7 @@ def _scale_time(minutes):
     return (60.0 * minutes / TIME_SCALE)
 
 
-BANDWIDTH_BASE = 100000000 # 100M
+BANDWIDTH_BASE = 100000000 # 100 Mbps
 HELLO_INTERVAL = 10 # 10 seconds
 DEAD_INTERVAL = 4 * HELLO_INTERVAL # typical value is 4 times the HELLO_INTERVAL
 AGE_INTERVAL = _scale_time(1) # 1 minute
@@ -53,6 +53,7 @@ class Database(dict):
             return False
 
     def remove(self, router_id):
+        """Remove LSA from router_id"""
         if router_id in self:
             del self[router_id]
 
@@ -66,11 +67,13 @@ class Database(dict):
         return flushed
 
     def update(self):
+        """Update LSDB by aging the LSAs and flushing expired LSAs"""
         for adv_router in self:
             self[adv_router].age += 1
         return self.flush()
 
     def get_shortest_paths(self, router_id):
+        """Return a list of shortest paths from router_id to all other nodes"""
         g = dijkstra.Graph()
         nodes = []
         paths = []

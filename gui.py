@@ -99,7 +99,7 @@ def main():
     QtCore.QObject.connect(router_timer, QtCore.SIGNAL('timeout()'), router.poll)
     # Start timers
     ui_timer.start(1000)
-    log_timer.start(120000)
+    log_timer.start(180000)
     router_timer.start(500)
     # Start router and show UI
     r.start()
