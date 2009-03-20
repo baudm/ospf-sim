@@ -34,9 +34,6 @@
       <property name="selectionBehavior" >
        <enum>QAbstractItemView::SelectRows</enum>
       </property>
-      <property name="sortingEnabled" >
-       <bool>true</bool>
-      </property>
       <column>
        <property name="text" >
         <string>Interface</string>
@@ -84,9 +81,6 @@
       <property name="selectionBehavior" >
        <enum>QAbstractItemView::SelectRows</enum>
       </property>
-      <property name="sortingEnabled" >
-       <bool>true</bool>
-      </property>
       <column>
        <property name="text" >
         <string>RouterID</string>
@@ -133,9 +127,6 @@
       </property>
       <property name="selectionBehavior" >
        <enum>QAbstractItemView::SelectRows</enum>
-      </property>
-      <property name="sortingEnabled" >
-       <bool>true</bool>
       </property>
       <column>
        <property name="text" >
