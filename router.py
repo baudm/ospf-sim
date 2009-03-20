@@ -85,10 +85,6 @@ class Router(object):
     def _refresh_lsa(self):
         if self._hostname in self._lsdb:
             log('Refreshing own LSA')
-            lsa = self._lsdb[self._hostname]
-            # reset age
-            lsa.age = 1
-            # and flood to network
             self._advertise()
 
     def _hello(self):
@@ -284,6 +280,7 @@ class IfaceRx(asynchat.async_chat):
         packet = pickle.loads(data)
         if isinstance(packet, ospf.HelloPacket):
             neighbor_id = packet.router_id
+            log('Seen %s' % (neighbor_id, ))
             # Reset Dead timer
             if neighbor_id in self.router._timers:
                 self.router._timers[neighbor_id].stop()
@@ -299,7 +296,7 @@ class IfaceRx(asynchat.async_chat):
                 if packet.adv_router == self.router._hostname:
                     self.router._advertise()
                 else:
-                    log('Received and merged LSA of %s via %s' % (packet.adv_router, self.iface_name))
+                    log('Received LSA of %s via %s and merged to the LSDB' % (packet.adv_router, self.iface_name))
                     self.router._flood(packet, self.iface_name)
                     self.router._update_routing_table()
             elif packet.adv_router == self.router._hostname and packet.seq_no == 1:
