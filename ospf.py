@@ -22,7 +22,7 @@
 import dijkstra
 
 
-TIME_SCALE = 30 # 1 minute (60 seconds) is to 2 seconds (60 / 2 = 30)
+TIME_SCALE = 20 # 1 minute (60 seconds) is to 3 seconds (60 / 3 = 20)
 
 
 def _scale_time(minutes):
