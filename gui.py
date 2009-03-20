@@ -85,8 +85,8 @@ def main():
 
     def refresh_ui():
         rows = len(r._table)
-        ui.routingTable.clearContents()
-        ui.routingTable.setRowCount(rows)
+        if ui.routingTable.rowCount() != rows:
+            ui.routingTable.setRowCount(rows)
         for i in xrange(rows):
             col_count = 0
             for col in ('dest', 'gateway', 'netmask', 'metric', 'iface'):
@@ -95,11 +95,12 @@ def main():
                 ui.routingTable.setItem(i, col_count, item)
                 col_count += 1
 
+        rows = sum([len(n.neighbors) for n in r._lsdb.values()])
+        if ui.linkStateDb.rowCount() != rows:
+            ui.linkStateDb.setRowCount(rows)
         row_count = 0
-        ui.linkStateDb.clearContents()
         for lsa in r._lsdb.values():
             for neighbor, data in lsa.neighbors.iteritems():
-                ui.linkStateDb.setRowCount(row_count + 1)
                 cost = data[3]
                 col_count = 0
                 for val in (lsa.adv_router, lsa.seq_no, lsa.age, neighbor, cost):
