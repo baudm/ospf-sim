@@ -6,7 +6,7 @@
     <x>0</x>
     <y>0</y>
     <width>558</width>
-    <height>700</height>
+    <height>720</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -19,7 +19,7 @@
       <property name="minimumSize" >
        <size>
         <width>550</width>
-        <height>100</height>
+        <height>120</height>
        </size>
       </property>
       <property name="toolTip" >
@@ -31,8 +31,8 @@
       <property name="alternatingRowColors" >
        <bool>true</bool>
       </property>
-      <property name="selectionBehavior" >
-       <enum>QAbstractItemView::SelectRows</enum>
+      <property name="selectionMode" >
+       <enum>QAbstractItemView::NoSelection</enum>
       </property>
       <column>
        <property name="text" >
@@ -78,8 +78,8 @@
       <property name="alternatingRowColors" >
        <bool>true</bool>
       </property>
-      <property name="selectionBehavior" >
-       <enum>QAbstractItemView::SelectRows</enum>
+      <property name="selectionMode" >
+       <enum>QAbstractItemView::NoSelection</enum>
       </property>
       <column>
        <property name="text" >
@@ -125,8 +125,8 @@
       <property name="alternatingRowColors" >
        <bool>true</bool>
       </property>
-      <property name="selectionBehavior" >
-       <enum>QAbstractItemView::SelectRows</enum>
+      <property name="selectionMode" >
+       <enum>QAbstractItemView::NoSelection</enum>
       </property>
       <column>
        <property name="text" >

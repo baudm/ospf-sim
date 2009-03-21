@@ -87,8 +87,11 @@ def main():
         for val in cols:
             item = QtGui.QTableWidgetItem(val)
             ui.interfaces.setItem(ifaces.index(iface), cols.index(val), item)
+    # Sort entries according to interface name
+    ui.interfaces.sortItems(0, QtCore.Qt.AscendingOrder)
 
     def refresh_ui():
+        # Routing Table
         rows = len(r._table)
         if ui.routingTable.rowCount() != rows:
             ui.routingTable.setRowCount(rows)
@@ -99,7 +102,9 @@ def main():
                 item = QtGui.QTableWidgetItem(str(val))
                 ui.routingTable.setItem(i, col_count, item)
                 col_count += 1
-
+        # Sort entries according to Destination
+        ui.routingTable.sortItems(0, QtCore.Qt.DescendingOrder)
+        # Link State Database
         rows = sum([len(n.neighbors) for n in r._lsdb.values()])
         if ui.linkStateDb.rowCount() != rows:
             ui.linkStateDb.setRowCount(rows)
@@ -113,6 +118,8 @@ def main():
                     ui.linkStateDb.setItem(row_count, col_count, item)
                     col_count += 1
                 row_count += 1
+        # Sort entries according to Router ID
+        ui.linkStateDb.sortItems(0, QtCore.Qt.AscendingOrder)
     # Create timers
     ui_timer = QtCore.QTimer()
     router_timer = QtCore.QTimer()
