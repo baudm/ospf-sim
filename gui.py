@@ -19,6 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import os
 import sys
 import signal
 import time
@@ -44,6 +45,7 @@ def mktimer(interval, callback, args=(), single_shot=False):
 
 def main():
     app = QtGui.QApplication(sys.argv)
+    os.chdir(os.path.dirname(__file__))
     ui = uic.loadUi('simulator.ui')
 
     def log(msg):
