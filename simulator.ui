@@ -56,7 +56,7 @@
       </column>
       <column>
        <property name="text" >
-        <string>Remote Node</string>
+        <string>Connected To</string>
        </property>
       </column>
      </widget>
@@ -83,7 +83,7 @@
       </property>
       <column>
        <property name="text" >
-        <string>Router ID</string>
+        <string>Adv. Router</string>
        </property>
       </column>
       <column>
@@ -98,7 +98,7 @@
       </column>
       <column>
        <property name="text" >
-        <string>Neighbor ID</string>
+        <string>Neighbor</string>
        </property>
       </column>
       <column>

@@ -83,6 +83,15 @@ def main():
         host = cfg.get(link, 'host')
         port = int(cfg.get(link, 'port'))
         r.iface_config(name, address, netmask, host, port)
+        bandwidth = int(bandwidth)
+        if bandwidth < 1000:
+            bandwidth = '%d bps' % (bandwidth, )
+        elif bandwidth < 1000000:
+            bandwidth = '%.1f kbps' % (bandwidth / 1000.0, )
+        elif bandwidth < 1000000000:
+            bandwidth = '%.1f Mbps' % (bandwidth / 1000000.0, )
+        else:
+            bandwidth = '%.1f Gbps' % (bandwidth / 1000000000.0, )
         cols = [name, address, netmask, bandwidth, link]
         for val in cols:
             item = QtGui.QTableWidgetItem(val)
@@ -97,9 +106,10 @@ def main():
             ui.routingTable.setRowCount(rows)
         for i in xrange(rows):
             col_count = 0
+            r._table[i].metric = '%.2f' % (r._table[i].metric, )
             for col in ('dest', 'gateway', 'netmask', 'metric', 'iface'):
                 val = getattr(r._table[i], col)
-                item = QtGui.QTableWidgetItem(str(val))
+                item = QtGui.QTableWidgetItem(val)
                 ui.routingTable.setItem(i, col_count, item)
                 col_count += 1
         # Sort entries according to Destination
@@ -111,7 +121,7 @@ def main():
         row_count = 0
         for lsa in r._lsdb.values():
             for neighbor, data in lsa.neighbors.iteritems():
-                cost = data[3]
+                cost = '%.2f' % (data[3], )
                 col_count = 0
                 for val in (lsa.adv_router, lsa.seq_no, lsa.age, neighbor, cost):
                     item = QtGui.QTableWidgetItem(str(val))
