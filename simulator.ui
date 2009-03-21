@@ -83,12 +83,12 @@
       </property>
       <column>
        <property name="text" >
-        <string>RouterID</string>
+        <string>Router ID</string>
        </property>
       </column>
       <column>
        <property name="text" >
-        <string>Seq. No</string>
+        <string>Seq. No.</string>
        </property>
       </column>
       <column>
@@ -98,7 +98,7 @@
       </column>
       <column>
        <property name="text" >
-        <string>NeighborID</string>
+        <string>Neighbor ID</string>
        </property>
       </column>
       <column>
