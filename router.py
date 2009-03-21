@@ -119,13 +119,21 @@ class Router(object):
     def _update_routing_table(self):
         log('Recalculating shortest paths and updating routing table')
         self._table.clear()
+        gateways = {}
         for path in self._lsdb.get_shortest_paths(self._hostname):
             next_hop, before_dest, dest, cost = path
             iface, gateway = self._lsdb[self._hostname].neighbors[next_hop][:2]
             dest_addr, netmask = self._lsdb[before_dest].neighbors[dest][1:3]
             dest_net = self._get_netadd(dest_addr, netmask)
+            if dest == next_hop:
+                gateways[cost] = (gateway, iface)
+                gateway = '-'
             r = Route(dest_net, gateway, netmask, cost, iface)
             self._table.append(r)
+        if gateways:
+            cost = min(gateways.keys())
+            gateway, iface = gateways[cost]
+            self._table.append(Route('0.0.0.0', gateway, '0.0.0.0', cost, iface))
 
     def _break_adjacency(self, neighbor_id):
         # Save reference QObject errors
