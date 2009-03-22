@@ -22,6 +22,7 @@
 import os
 import sys
 import signal
+import socket
 import time
 from ConfigParser import SafeConfigParser
 
@@ -47,6 +48,7 @@ def main():
     app = QtGui.QApplication(sys.argv)
     os.chdir(os.path.dirname(__file__))
     ui = uic.loadUi('simulator.ui')
+    ui.setWindowIcon(QtGui.QIcon('icon.png'))
 
     def log(msg):
         ui.messages.appendPlainText('%s    %s' % (time.ctime().split()[3], msg))
@@ -64,7 +66,7 @@ def main():
     cfg.read(str(configfile))
 
     hostname = cfg.get('Local', 'hostname')
-    ui.setWindowTitle(hostname)
+    ui.setWindowTitle('OSPF-Sim: %s' % (hostname, ))
     r = router.Router(hostname)
 
     # Create and configure Router interfaces
@@ -75,7 +77,11 @@ def main():
         name = iface.split(':')[1]
         bandwidth = cfg.get(iface, 'bandwidth')
         port = int(cfg.get(iface, 'port'))
-        r.iface_create(name, bandwidth, port)
+        try:
+            r.iface_create(name, bandwidth, port)
+        except socket.error:
+            QtGui.QMessageBox.information(ui, 'OSPF-Sim', 'An instance of %s is already running.' % (hostname, ))
+            sys.exit(app.quit())
         # Configure
         address = cfg.get(iface, 'address')
         netmask = cfg.get(iface, 'netmask')
