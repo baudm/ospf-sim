@@ -24,7 +24,7 @@ import sys
 import signal
 import socket
 import time
-from ConfigParser import SafeConfigParser
+import ConfigParser
 
 from PyQt4 import QtCore, QtGui, uic
 
@@ -62,8 +62,12 @@ def main():
         if len(sys.argv) != 2:
             sys.exit(1)
         configfile = sys.argv[1]
-    cfg = SafeConfigParser()
-    cfg.read(str(configfile))
+    cfg = ConfigParser.SafeConfigParser()
+    try:
+        cfg.read(str(configfile))
+    except ConfigParser.MissingSectionHeaderError:
+        QtGui.QMessageBox.warning(ui, 'OSPF-Sim', 'Invalid router configuration file!')
+        sys.exit(app.quit())
 
     hostname = cfg.get('Local', 'hostname')
     ui.setWindowTitle('OSPF-Sim: %s' % (hostname, ))
