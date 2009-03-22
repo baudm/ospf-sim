@@ -106,24 +106,24 @@ def main():
             ui.routingTable.setRowCount(rows)
         for i in xrange(rows):
             col_count = 0
-            r._table[i].metric = '%.2f' % (r._table[i].metric, )
+            metric = '%.2f' % (r._table[i].metric, )
             for col in ('dest', 'gateway', 'netmask', 'metric', 'iface'):
-                val = getattr(r._table[i], col)
+                val = (metric if col == 'metric' else getattr(r._table[i], col))
                 item = QtGui.QTableWidgetItem(val)
                 ui.routingTable.setItem(i, col_count, item)
                 col_count += 1
         # Sort entries according to Destination
         ui.routingTable.sortItems(0, QtCore.Qt.DescendingOrder)
         # Link State Database
-        rows = sum([len(n.neighbors) for n in r._lsdb.values()])
+        rows = sum([len(n.networks) for n in r._lsdb.values()])
         if ui.linkStateDb.rowCount() != rows:
             ui.linkStateDb.setRowCount(rows)
         row_count = 0
         for lsa in r._lsdb.values():
-            for neighbor, data in lsa.neighbors.iteritems():
-                cost = '%.2f' % (data[3], )
+            for network, data in lsa.networks.iteritems():
+                cost = '%.2f' % (data[1], )
                 col_count = 0
-                for val in (lsa.adv_router, lsa.seq_no, lsa.age, neighbor, cost):
+                for val in (lsa.adv_router, lsa.seq_no, lsa.age, network, cost):
                     item = QtGui.QTableWidgetItem(str(val))
                     ui.linkStateDb.setItem(row_count, col_count, item)
                     col_count += 1

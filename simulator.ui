@@ -98,7 +98,7 @@
       </column>
       <column>
        <property name="text" >
-        <string>Neighbor</string>
+        <string>Network</string>
        </property>
       </column>
       <column>

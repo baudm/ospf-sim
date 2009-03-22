@@ -119,16 +119,38 @@ class Router(object):
     def _update_routing_table(self):
         log('Recalculating shortest paths and updating routing table')
         self._table.clear()
+        paths = self._lsdb.get_shortest_paths(self._hostname)
+        if not paths:
+            return
+        networks = {}
+        for node, lsa in self._lsdb.iteritems():
+            for network, data in lsa.networks.iteritems():
+                if network not in networks:
+                    networks[network] = {}
+                networks[network][node] = data[1]
         gateways = {}
-        for path in self._lsdb.get_shortest_paths(self._hostname):
-            next_hop, before_dest, dest, cost = path
-            iface, gateway = self._lsdb[self._hostname].neighbors[next_hop][:2]
-            dest_addr, netmask = self._lsdb[before_dest].neighbors[dest][1:3]
-            dest_net = self._get_netadd(dest_addr, netmask)
-            if dest == next_hop:
+        for network, nodes in networks.iteritems():
+            if len(nodes) != 2:
+                continue
+            n1, n2 = nodes.keys()
+            if self._hostname in nodes:
+                # The assumption is that the router will prefer sending data
+                # through its own interface even if the cost is higher
+                dest = next_hop = (n2 if n1 == self._hostname else n1)
+                cost = nodes[self._hostname]
+            else:
+                # Determine which node is the shorter path to the destination network
+                dest = (n1 if paths[n1][1] + nodes[n1] < paths[n2][1] + nodes[n2] else n2)
+                next_hop, cost = paths[dest]
+                # Get actual cost
+                cost += nodes[dest]
+            # Get other info
+            iface, gateway = self._neighbors[next_hop][:2]
+            netmask = self._lsdb[dest].networks[network][3]
+            if self._hostname in nodes:
                 gateways[cost] = (gateway, iface)
                 gateway = '-'
-            r = Route(dest_net, gateway, netmask, cost, iface)
+            r = Route(network, gateway, netmask, cost, iface)
             self._table.append(r)
         if gateways:
             cost = min(gateways.keys())
@@ -160,20 +182,21 @@ class Router(object):
             iface.transmit(packet)
 
     def _advertise(self):
-        neighbors = {}
+        networks = {}
         for neighbor_id, data in self._neighbors.iteritems():
             iface_name, address, netmask = data
             iface = self._interfaces[iface_name]
             cost = ospf.BANDWIDTH_BASE / float(iface.bandwidth)
-            neighbors[neighbor_id] = (iface_name, address, netmask, cost)
+            netadd = self._get_netadd(address, netmask)
+            networks[netadd] = (neighbor_id, cost, address, netmask)
         # Create new or update existing LSA
         if self._hostname in self._lsdb:
             lsa = self._lsdb[self._hostname]
             lsa.seq_no += 1
             lsa.age = 1
-            lsa.neighbors = neighbors
+            lsa.networks = networks
         else:
-            lsa = ospf.LinkStatePacket(self._hostname, 1, 1, neighbors)
+            lsa = ospf.LinkStatePacket(self._hostname, 1, 1, networks)
         self._lsdb.insert(lsa)
         # Flood LSA to neighbors
         self._flood(lsa)

@@ -39,14 +39,14 @@ MAX_AGE = _scale_time(60) # 1 hour
 
 class LinkStatePacket(object):
 
-    def __init__(self, router_id, age, seq_no, neighbors):
+    def __init__(self, router_id, age, seq_no, networks):
         self.adv_router = router_id
         self.age = age
         self.seq_no = seq_no
-        self.neighbors = neighbors
+        self.networks = networks
 
     def __repr__(self):
-        stat = '\nADV Router: %s\nAge: %d\nSeq No.: %d\nNeighbors: %s\n\n' % (self.adv_router, self.age, self.seq_no, self.neighbors)
+        stat = '\nADV Router: %s\nAge: %d\nSeq No.: %d\nNetworks: %s\n\n' % (self.adv_router, self.age, self.seq_no, self.networks)
         return stat
 
 
@@ -94,11 +94,11 @@ class Database(dict):
         """Return a list of shortest paths from router_id to all other nodes"""
         g = dijkstra.Graph()
         nodes = []
-        paths = []
+        paths = {}
         for lsa in self.values():
             nodes.append(lsa.adv_router)
-            for neighbor_id, data in lsa.neighbors.iteritems():
-                cost = data[3]
+            for data in lsa.networks.values():
+                neighbor_id, cost = data[:2]
                 g.add_e(lsa.adv_router, neighbor_id, cost)
         if router_id in nodes:
             nodes.remove(router_id)
@@ -116,12 +116,6 @@ class Database(dict):
             except KeyError:
                 continue
             else:
-                if len(path) > 1:
-                    next_hop = path[1]
-                    before_dest = path[len(path) - 1]
-                else:
-                    next_hop = dest
-                    before_dest = router_id
-                entry = (next_hop, before_dest, dest, cost)
-                paths.append(entry)
+                next_hop = (path[1] if len(path) > 1 else dest)
+                paths[dest] = (next_hop, cost)
         return paths
