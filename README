@@ -1,6 +1,18 @@
 ECE 151: OSPF on point-to-point networks simulation in Python
 
-Assumptions/Conventions/Clarifications/Limitations:
+
+Dependencies:
+1. Python >= 2.5 (http://www.python.org/download/)
+2. Qt >= 4.4 (via PyQt4 bindings: http://www.riverbankcomputing.co.uk/software/pyqt/download)
+
+
+Tested Platforms:
+* Linux
+* Windows Vista Home Premium SP1
+* Windows XP (?)
+
+
+Simulation Constraints:
 
 Area type: Backbone Area/Area 0.0.0.0/Area 0
 * All routers are in Area 0. Thus, all routes are intra-area routes.
