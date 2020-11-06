@@ -1,5 +1,7 @@
 # OSPF Intra-domain Routing Simulation
 
+![Simulator interface](interface.jpg)
+
 An implementation of a _subset_ of the OSPF routing protocol using Python. Every instance of the Python program will act as a _standalone router_ and will communicate with each other like real routers, as far as routing table updates are concerned. The _routers_ will send advertisements to each other using the OSPF routing protocol. Each instance of the program will show its routing table in _real-time_.
 
 The OSPF implementation forgoes some of the complexities of the original specifications.
